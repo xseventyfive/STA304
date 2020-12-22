@@ -1,0 +1,155 @@
+---
+title: "In-Depth Analysis of Voting Outcome in the 2019 Canadian Election"
+author: "Kelvin Lin"
+date: "December 22, 2020"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+asbtract: This research study will analyze the voting outcome of the election based on the most recent Canadian census and survey data using four different variables such as age, sex, household size and provinces using a logistic regression model. The objective of this research will estimate the probability of the Liberal Party winning last year's election if all qualified voters participated using the post-stratification method.
+keywords: Election Results, Voting Outcomes, Canada Election, Federal Election"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+devtools::install_github("hodgettsp/cesR")
+library(cesR)
+library(tidyverse)
+library(visdat)
+library(skimr)
+
+census <- read.csv("census_data.csv")
+survey <- read.csv("new_ces2019.csv")
+```
+
+## In-Depth Analysis of Voting Outcome in the 2019 Canadian Election
+
+# Kelvin Lin
+
+# December 22, 2020
+
+
+## Introduction
+Over the past few years, politics in Canada have remained in a center position on the political spectrum to provide a balance of liberalism and conservativism ideologies. Canadian citizens would vote in elections to elect a political party that would represent their own values in a democratic and fair process. There are five major political parties in Canada: Liberal Party of Canada, Conservative Party of Canada, New Democratic Party (NDP), Bloc Quebecois and the Green Party of Canada. The Liberal Party focuses on liberal areas like raising the minimum wage, reducing carbon emissions to combat climate change and as well as decriminalizing marijuana for recreational use. On the other hand, the Conservative Party focuses on conservative areas like supporting free trade agreements, cutting various taxes and advocating for less government intervention. The election voting patterns would typically be consistent with a party in power over a period of time but it may vary depending on the degree of how well they performed over their time in power. The Liberal Party of Canada is currently in power with Justin Trudeau being the current Prime Minister of Canada and the Conservative Party of Canada is currently the official opposition with Erin O' Toole being the leader of the party.
+
+The research study will estimate the probability of the Liberal Party winning in the 2019 election if all qualified voters participated in the election by using several variables such as age, sex, household size and province that might affect the voting outcome of the election results. The hypothesis for this study would be that if all qualified voters participated in the last federal election, the Liberal Party would win the majority of the votes. The following sections of this paper will be discussing the survey and census data, highlighting key findings using the logistic regression model and the post-stratification methods, examining specific limitations and providing prospective actions to improve the research.
+
+
+## Data and Methodology
+The following data can be obtained directly from the GitHub repository link: https://github.com/xseventyfive/STA304
+
+The Canadian General Social Survey (GSS) census data set was downloaded from the (CHASS Data Centre, 2020) within the Faculty of Arts and Sciences, University of Toronto website. In particular, the selected data set was based on the most recent census information released in 2017, then proceeded on selecting all of the variables that were available on the website and downloaded the output file as a CSV file. The GSS cleaning code by (Alexander & Caetano, 2020) was used to clean the 2017 GSS CSV file in order to perform an analysis on the census data. 
+
+In addition, the census data cleaning code, census.R, was adapted from (Alexander & Caetano, 2020) to read in the 2017 GSS cleaned CSV file output. The following key variables were selected, counted and grouped: age, sex, household size and province. There were no other variables that were similar that was not selected and variables were not constructed into groups but rather separately in order to maintain consistency. Age variable was filtered to include qualified voters that are above 18 years of voting age and it was processed to round from float to integer data type for the purpose of ensuring it would map to the survey data set. The output file is designated as "census_data.csv" in the working directory.  
+
+The Canadian Election Study (CES) survey data set by (Stephenson, Harrell, Rubenson & Loewen, 2020) was downloaded using the cesR package written by (Hodgetts & Alexander, 2020). Specifically, the selected data set was based on a phone survey conducted in 2019 and and the phone survey data set was chosen over a web survey data set since it would have a higher chance of response rate for more accurate results because some people might ignore the web surveys on other websites or sent to their e-mails. The codebook written by (Stephenson, Harell, Rubenson & Loewen, 2020) was used to map the specific range of values with the labels for the survey questions. 
+
+Furthermore, the survey data cleaning code, survey.R, was adapted from (Alexander & Caetano, 2020) to obtain the 2019 CES phone survey data from the cesR package written by (Hodgetts & Alexander, 2020). The following key variables were selected, counted and grouped: age, gender, vote, household size and province. Similar to the census data cleaning code, there were no other variables that were similar that was not selected, and variables were not constructed into groups but rather separately in order to maintain consistency. In addition, age was filtered to greater than 18 years of voting age and less than 80 years old, sex was filtered and mutated to count the male and female population, voting was restricted to a binary measure of 1 as the Liberal Party and 0 for other parties, household size variable was mutated within a range of 1-6 by excluding greater than 7 people in a given household and lastly, province variable was mutated to only include the 10 provinces with no territories. The output file is designated as "new_ces2019.csv" in the working directory.
+
+The primary advantages of these two data sets are as follows: the 2019 CES survey data set includes 278 variables to select from a total of 4021 observations. Thus, the number of variables and observations would indicate that the survey is extremely reliable to extrapolate the information from the general population being sampled across Canada. In particular, the survey data used exclusive numbers associated with the people being surveyed to prevent duplicate results. The 2017 GSS census data set includes 81 variables to select from a total of 20602 observations. Therefore, the number of variables contain numerous demographic indicators to examine these substantial responses from the census. The target population would include all Canadian eligible voters, the frame population would include all Canadian eligible voters who participate in the phone survey and the sample population is all Canadian eligible voters who participate in the phone survey that are of adult age. However, there are some disadvantages with these two data sets such that the GSS census data set was based on 2017 information, and these census information can change over time. In particular, data may vary within the year ranges of 2017-2019, and the 2019 CES phone survey data was collected using the phone method but the data set also has some values that are not available and therefore, it yields no responses to some questions in the survey and this leaves a huge gap of missing survey data in which some questions cannot be used for the model.
+
+
+## Model
+This particular research study will use RStudio software to perform a logistic regression model from the 2019 CES phone survey data obtained from (Stephenson, Harell, Rubenson, & Loewen, 2020). Specifically, the Bayesian logistic regression model will be used in this situation since it is more appropriate to measure the logit function based on the predictor variables that was chosen for this study - age, sex, household size, and provinces. Also, the binary values as mutated in the survey data cleaning code, where 1 denotes all Canadian eligible citizens voting for the Liberal Party and 0 otherwise. Conversely, a linear model approach would not be appropriate as it does not take into account of other variables and it would not be accurate in this scenario. The four variables selected have important characteristics to apply into the logistic regression model. Firstly, individual ages are necessary to determine if there are specific differences in voting patterns per age and hence, age was not grouped for this exact reason. Secondly, gender is considered to be categorical as it is split between male and female and to see if there are differences in specific voting stances between the two genders. Thirdly, the individual number of people living in a household is also crucial as we can compare the distinctness between smaller families with bigger families which may be geared towards the social issues of the Liberals platform. Lastly, list of provinces have a levels effect because it is strongly decisive in our model so that it can determine how individuals vote according to their policies that they favour in. If there exists a shift between specific provinces, then it will strongly indicate where the Liberal Party needs to work on to improve the voting outcome of these places. An alternative statisical model to this approach would be using a linear regression model which may provide a basic foundation to the understanding of voting outcome but it would not factor in other variables that may influence the results of the federal election. Furthermore, this alternative approach would be extremely inefficient since it would require separate linear regression models for each variable and it would result in generating multiple plots in the results section.
+
+In particular, (Alexander & Caetano, 2020) described the logistic regression formula as: $$log(p/1-p) = \beta_0+\beta_1 x_{age}+\beta_2 x_{sex}+\beta_3 x_{hh\_size}+\beta_4 x_{province}$$ since $log(p/1-p)$ is the log-odds that all Canadian eligible voters will vote for the Liberal Party of Canada. The slopes are given by: $\beta_{n}$, where n denotes the slopes of the four predictor variables. Specifically, $\beta_{0}$ is the general slope, $\beta_{1}$ is the slope for the age, $\beta_{2}$ is the slope for the sex, $\beta_{3}$ is the slope for the household sizes and $\beta_{4}$ is the slope for the provinces. In particular, $x_{age}$ denotes the value for the age, $x_{sex}$ denotes the value for the sex, $x_{hh\_size}$ denotes the value for the household size and $x_{province}$ denotes the value for the provinces.
+
+
+```{r, echo=FALSE}
+model<- glm(formula = vote ~ age + sex + hh_size + province, data = survey, family = "binomial")
+```
+
+This research uses the post-stratification method in a logistic regression model with variables - age, sex, household size and provinces. The post-stratification code was adapted from (Alexander & Caetano, 2020) to determine the relative probability of the Liberal Party winning in the Canadian federal election if all eligible voters participated in last year's election and by converting the log odds estimate to an estimated value, the estimated value by the number of cells which can be used for post-stratification analysis. (Alexander & Caetano, 2020) described the post-stratification method can be mathematically notated by: $$\hat y^{(PS)} = \sum N_{j}\hat y_{j}/\sum N_{j}$$ and specifically, $\hat y^{(PS)}$ is the cell value for the estimates, $N_{j}$ is the voter population sample of the cells defined at $\hat y_{j}$. 
+
+```{r, include=FALSE}
+
+census$logodds_estimate <-
+  model %>%
+  predict(newdata = census, type = "response")
+
+census$estimate <-
+  exp(census$logodds_estimate)/(1+exp(census$logodds_estimate))
+
+census %>%
+  mutate(alp_predict_prop = estimate*n) %>%
+  summarise(alp_predict = sum(alp_predict_prop)/sum(n))
+
+```
+
+
+## Results
+
+```{r, echo = FALSE}
+broom::tidy(model)
+
+census %>%
+  ggplot(aes(y=age, x=estimate, color=factor(age))) + geom_boxplot() + ggtitle("Estimated Voting Probability by Age") + xlab("Estimated Probability") + ylab("Age in Years") + labs(subtitle = "(Figure 1)", color = "Years of Age")
+
+census %>%
+  ggplot(aes(x=sex, y=estimate, color=factor(sex))) + geom_boxplot() + ggtitle("Estimated Voting Probability by Sex")  + xlab("Sex") + ylab("Estimated Probability") + labs(subtitle = "(Figure 2)", color = "Sex")
+
+census %>%
+   ggplot(aes(x=hh_size, y=estimate, color=factor(hh_size))) + geom_boxplot() + ggtitle("Estimated Voting Probability by Household Size") + xlab("Number of People") + ylab("Estimated Probability") + labs(subtitle = "(Figure 3)", color = "Household Size") 
+
+census %>%
+  ggplot(aes(y=province, x=estimate, color=factor(province))) + geom_boxplot() + ggtitle("Estimated Voting Probability by Provinces") + xlab("Estimated Probability") + ylab("Provinces") + labs(subtitle = "(Figure 4)", color = "Provinces")
+```
+Based on this post-stratification method, the predicted probability of the Liberal Party winning the 2019 Canadian federal election is approximately 0.559 which was generated by a logistic regression model using the variables - age, sex, household size and provinces. 
+
+According to Figure 1, the estimated voting probability by age highlights all the eligible voters that are age 18 years or older and up to 80 years of age. The graph shows that the younger population tend to have a lower estimated probability than that of the older population. The population of ages 18 to 20 tend to dramatically shift in terms of their probability to vote for Liberal Party which is due to their first few years of voting in a federal election. In particular, the younger population from 20 years old to mid-30 years old tend to have a consistent voting pattern of an estimated probability of slightly higher than 0.55 when these voters are either studying in school or starting their careers in life. There exists a significant shift towards voting for the Liberal Party when people are 50 years old and higher exceeding an estimated probability of 0.56, and the highest increase of probability of voting for the Liberal Party within the senior population at an estimated probability of 0.57. The logistic regression model indicates that age is roughly 0.007 which indicates a minor difference to the voting pattern with a standard error of 0.0027 and a very small p-value. Therefore, our results in Figure 1 show that there is a very small voting difference at roughly 0.55 for all ages which is seen in the estimate for the variable age. 
+
+According to Figure 2, the estimated voting probability by sex depicts the two categorical variables of female and male. The graph shows that female has a higher probability to vote for the Liberal Party than male gender at a value slightly higher than 0.56 and conversely, male has a value of slightly less than 0.56. These two differences are very minimal but it can still explain the voting patterns between genders for the federal election. The logistic regression model shows that the estimated value for sex is -0.053, 0.085 for the standard error and a very small p-value. Thus, the results in Figure 2 show that there is some voting difference at approximately 0.56 for both genders which is seen in the estimate for the variable sex.
+
+According to Figure 3, the estimated voting probability by age shows the number of people that live in a household relative to their probability to vote for the Liberal Party in the federal election. It shows that for 1-2 people living in a single household, they tend to have a probability value of slightly more than 0.56, 3-5 people living in a single household have a value that is slightly less than 0.56 and a household size of 6 people has a value of greater than 0.55 indicating that as more people live in a household, they are more likely to vote less for the Liberal Party and possibly for other political parties like the Conservative Party. The logistic regression model shows that the estimated value for household size is -0.01, 0.034 for the standard error and a very small p-value. Thus, the results in Figure 2 show that there is some voting difference for the number of people living in a house which is seen in the estimate for the variable household size.
+
+According to Figure 4, the estimated voting probability by provinces illustrates all the eligible voters that are located in the provinces of Alberta, British Columbia, Manitoba, New Brunswick, Newfoundland and Labrador, Nova Scotia, Ontario, Prince Edward Island, Quebec and Saskatchewan with no terriotories. The provinces that tend to have the lowest probability to vote for the Liberal Party are Alberta and Saskatchewan. The province of Alberta has an estimated probability that is higher of 0.52, and Saskatchewan has an estimated probability close to 0.53. These two provinces have a significant shift of voting against the Liberal Party in the federal election which indicates that the voting patterns differ considerably to those of Eastern Canada. And to some extent, the provinces of British Columbia has an estimated probability that is slightly higher than 0.54 while being close to 0.55 and Manitoba has an estimated probability that is roughly 0.55. There are some provinces that have slightly higher probability of voting for the Liberal Party such as Quebec and New Brunswick which both have an estimated probability of close to 0.56. The Canadian provinces of British Columbia, Manitoba, Quebec and New Brunswick may vote for other political parties but the possibility of voting for Liberal Party is still higher than that of Alberta and Saskatchewan. On the  other hand, Newfoundland and Labrador, Nova Scotia, Ontario and Prince Edward Island tend to exceed the estimated probability of 0.56 which indicates that these provinces tend to have a higher probability of voting for the Liberal Party. The province of Ontario which is the only province that exceeds the estimated probability of 0.57 with the highest possibility of voting for the Liberal Party in the federal election. The logistic regression model shows that the estimated value for Saskatchewan is 0.062, British Columbia is 0.67, Manitoba is 0.77, New Brunswick and Quebec is 0.96, Prince Edward Island is 1.12, Newfoundland and Labrador is 1.13, Nova Scotia is 1.15, Ontario is 1.29. The estimated value for Saskatchewan is the lowest as they tend to vote more for Conservative Party than the Liberal Party which is similar to Alberta as seen in Figure 4. In addition, Ontario has the highest value at 1.29 exceeding 1.0 which indicates the voters in Ontario tend to vote for the Liberal Party in the federal election. 
+
+
+## Discussion
+The post-stratification results showed that the probability for the Liberal Party winning is 0.559 from a logistic regression model with the variables - age, sex, household size and provinces. Based off these variables, it showed that specific characteristics may have played a role in determining the federal election such as a older population, household sizes that were smaller, female gender and provinces that are in the parts of Eastern Canada tend to vote for Liberals more than Conservatives. On the contrary, the younger population, household sizes that are bigger, male gender and provinces tend to vote for Conservative Party more than the Liberal Party on average.
+
+# Weaknesses
+There are some issues that needs to be addressed in this particular research such as the variable for age was restricted to ages up to 80 years old. In particular, the age range was between 15-80 in the census data and the survey data had a range between 15-100. The range that was restricted may have skewed some of the data as it does not represents a larger population of voters. Moreover, the household size variable was also restricted to 1-6 people since the census data did not have data for household sizes of 7-15 people and the survey data had data for 1-15 people in a household. Since the household size was restricted to 1-6 people, the data for 7-15 people living in household was omitted in this study. In addition, the provinces variable was limited to only the provinces in Canada and not territories due to the lack of data reported in the survey and census data. It would be interesting to see if there are differences in voting patterns compared to the western and eastern provinces in Canada. Moreover, the variables of interest can be changed to different ones instead of age, sex and household because it did not really show much of a difference in comparison to the provinces variable, so possibly a more ideal variable would be income groups to see if people earning more or less had an effect on their voting patterns in the federal election.
+
+# Next Steps
+There are some future steps that can improve this research study by adding additional variables to the logistic regression model to provide a better estimate or alternatively, by using other variables of interest that have a stronger correlation to the logistic regression model in order to give a better sense of the probability predicted in the federal election. In particular, some variables that can be used are income of individuals, place of birth/citizenship status and possibly even occupation. Also, we can use the web survey instead of the phone survey or using other years of Canadian election data to see if there are certain differences in the voting patterns in the federal election. Furthermore, polling data from different websites may also provide an insight on how close the post-stratification result is, and these polling information can also be used as a good comparison for future election results.
+
+
+## References
+1. Alexander, R., & Caetano, S. J. (2020). Telling Stories With Data. Retrieved December 20, 2020, from https://www.tellingstorieswithdata.com/
+
+2. Stephenson, L.B., Harrell, A., Rubenson, D. & Loewen, P.J. (2020). 2019 Canadian Election Study - Phone Survey. Harvard Dataverse, V1. UNF:6:eyR28qaoYlHj9qwPWZmmVQ==fileUNF. https://doi.org/10.7910/DVN/8RHLG1.
+
+3. Stephenson, L.B., Harrell, A., Rubenson, D. & Loewen, P.J. Forthcoming. 'Measuring Preferences and Behaviour in the 2019 Canadian Election Study,' Canadian Journal of Political Science.
+
+4. CHASS Data Centre. Dc.chass.utoronto.ca. (2020). Retrieved 19 December 2020, from http://dc.chass.utoronto.ca/.
+
+5. Hodgetts, P. & Alexander, R. (2020). cesR: Access the CES Datasets a Little Easier.. R package version 0.1.0.
+  
+6. Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
+  
+7. Tierney, N. (2017). visdat: Visualising Whole Data Frames. _JOSS_,*2*(16), 355. https://doi.org/10.21105/joss.00355, http://dx.doi.org/10.21105/joss.00355>.
+
+8. Waring, E., Quinn, M., McNamara, A., Arino de la Rubia, E., Zhu, H. & Ellis, S. (2020). skimr: Compact and Flexible Summaries of Data. R package version 2.1.2. https://CRAN.R-project.org/package=skimr
+
+9. Wickham, H., Hester, J. & Chang, W. (2020). devtools: Tools to Make Developing R Packages Easier. R package version 2.3.2. https://CRAN.R-project.org/package=devtools
+
+10. Larmarange, J. (2020). labelled: Manipulating Labelled Data. R package version 2.7.0. https://CRAN.R-project.org/package=labelled
+
+11. Xie, Y. (2020). knitr: A General-Purpose Package for Dynamic Report Generation in R. R package version 1.29.
+
+12. Xie, Y. (2015). Dynamic Documents with R and knitr. 2nd edition. Chapman and Hall/CRC. ISBN 978-1498716963
+
+13. Xie, Y. (2014). knitr: A Comprehensive Tool for Reproducible Research in R. In Victoria Stodden, Friedrich Leisch and Roger D. Peng, editors, Implementing Reproducible Computational Research. Chapman and Hall/CRC. ISBN 978-1466561595
+
+14. Robinson, D., Hayes, A. & Couch, S. (2020). broom: Convert Statistical Objects into Tidy Tibbles. R package version 0.7.2. https://CRAN.R-project.org/package=broom
+
+15. Alexander, R. (2020). Telling Stories With Data. Retrieved December 20, 2020, from https://rohanalexander.com/posts/2019-12-04-getting_started_with_mrp/
+
+16. Alexander, R. & Caetano, S. (2020). STA304-MRPs-Updated.pdf [PDF]. Quercus. Retrieved December 21, 2020, from https://q.utoronto.ca/
+
+17. Wickham, H. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag, New York.
+
+18. Alexander, R. & Caetano, S. (2020). Quercus. Retrieved December 21, 2020, from https://q.utoronto.ca/
